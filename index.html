@@ -2,95 +2,192 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+
+<!-- КРИТИЧЕСКИ ВАЖНО ДЛЯ МОБИЛЬНОЙ АДАПТАЦИИ -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Калькулятор порошковой покраски</title>
 
 <style>
+
+/* ===== БАЗА ===== */
+
+*{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html{
+    width:100%;
+    overflow-x:hidden;
+}
+
 body{
     margin:0;
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    width:100%;
+    overflow-x:hidden;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
     background:#0b0f14;
     color:#e6f1ff;
 }
 
-body::before, body::after{
+/* ===== ФОН ===== */
+
+body::before,
+body::after{
     content:"";
     position:fixed;
     width:600px;
     height:600px;
     filter:blur(140px);
     z-index:-1;
+    pointer-events:none;
 }
-body::before{background:#00ff88;opacity:.18;top:-200px;left:-200px;}
-body::after{background:#00b7ff;opacity:.12;bottom:-200px;right:-200px;}
+
+body::before{
+    background:#00ff88;
+    opacity:.18;
+    top:-200px;
+    left:-200px;
+}
+
+body::after{
+    background:#00b7ff;
+    opacity:.12;
+    bottom:-200px;
+    right:-200px;
+}
+
+/* ===== КОНТЕЙНЕР ===== */
 
 .container{
+    width:100%;
     max-width:920px;
-    margin:40px auto;
-    padding:0 16px;
+    margin:0 auto;
+    padding:24px 16px 40px;
 }
+
+/* ===== ТЕКСТ ===== */
 
 h1{
     text-align:center;
     color:#7CFFB2;
+    margin:0 0 24px;
+    font-size:clamp(24px,5vw,38px);
+    line-height:1.2;
+    word-break:break-word;
 }
 
+h2{
+    margin-top:0;
+    font-size:clamp(18px,4vw,26px);
+    line-height:1.3;
+}
+
+/* ===== КАРТОЧКИ ===== */
+
 .card{
-    background: rgba(255,255,255,0.06);
-    backdrop-filter: blur(18px);
+    width:100%;
+    background:rgba(255,255,255,0.06);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
     border-radius:18px;
     border:1px solid rgba(255,255,255,0.08);
     padding:22px;
     margin-bottom:18px;
+    overflow:hidden;
 }
+
+/* ===== GRID ===== */
 
 .grid{
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:14px;
+    width:100%;
 }
 
-@media (max-width:700px){
-    .grid{grid-template-columns:1fr;}
-}
+/* ===== ГРУППЫ ===== */
 
 .group{
     display:flex;
     flex-direction:column;
     gap:6px;
-    margin-top:10px;
+    margin-top:12px;
+    width:100%;
 }
+
+/* ===== LABEL ===== */
 
 label{
-    font-size:12px;
+    font-size:13px;
     color:#b7c7d9;
+    line-height:1.4;
 }
 
-input,select{
-    padding:12px;
+/* ===== INPUT / SELECT ===== */
+
+input,
+select{
+    width:100%;
+    min-width:0;
+    padding:14px;
     border-radius:12px;
     border:1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.05);
+    background:rgba(255,255,255,0.05);
     color:#7CFFB2;
+    font-size:16px; /* фикс zoom на iPhone */
+    outline:none;
+    transition:.2s;
 }
 
-select option{background:#0b0f14;}
+/* убирает вылезание */
+input{
+    appearance:none;
+    -webkit-appearance:none;
+}
 
-/* toggle */
+input:focus,
+select:focus{
+    border-color:#7CFFB2;
+    box-shadow:0 0 0 3px rgba(124,255,178,.15);
+}
+
+select option{
+    background:#0b0f14;
+    color:#ffffff;
+}
+
+/* ===== TOGGLE ===== */
+
 .toggle{
+    width:100%;
     display:flex;
     justify-content:space-between;
     align-items:center;
+    gap:12px;
     padding:14px;
-    margin-top:14px;
+    margin-top:16px;
     border-radius:14px;
-    background: rgba(255,255,255,0.04);
+    background:rgba(255,255,255,0.04);
+}
+
+.toggle span{
+    font-size:15px;
+    line-height:1.4;
+    word-break:break-word;
 }
 
 .switch{
     position:relative;
-    width:46px;height:24px;
+    width:46px;
+    height:24px;
+    flex-shrink:0;
 }
-.switch input{display:none;}
+
+.switch input{
+    display:none;
+}
 
 .slider{
     position:absolute;
@@ -103,8 +200,10 @@ select option{background:#0b0f14;}
 .slider:before{
     content:"";
     position:absolute;
-    width:18px;height:18px;
-    left:3px;top:3px;
+    width:18px;
+    height:18px;
+    left:3px;
+    top:3px;
     background:white;
     border-radius:50%;
     transition:.3s;
@@ -118,39 +217,130 @@ select option{background:#0b0f14;}
     transform:translateX(22px);
 }
 
-/* blocks */
+/* ===== АНИМАЦИЯ БЛОКОВ ===== */
+
 .block{
     overflow:hidden;
     max-height:0;
     opacity:0;
     transform:translateY(-8px);
-    transition:all .35s ease;
+    transition:
+        max-height .35s ease,
+        opacity .35s ease,
+        transform .35s ease;
 }
 
 .block.show{
-    max-height:220px;
+    max-height:500px;
     opacity:1;
     transform:translateY(0);
 }
 
+/* ===== BUTTON ===== */
+
 button{
     width:100%;
-    margin-top:16px;
-    padding:14px;
+    margin-top:18px;
+    padding:16px;
     border:none;
     border-radius:14px;
     background:linear-gradient(135deg,#7CFFB2,#00b7ff);
+    color:#051017;
+    font-size:16px;
     font-weight:800;
+    cursor:pointer;
+    transition:.2s;
 }
 
+button:active{
+    transform:scale(.98);
+}
+
+/* ===== RESULT ===== */
+
 .result{
-    margin-top:14px;
+    width:100%;
+    margin-top:16px;
     padding:16px;
     border-radius:14px;
-    background: rgba(255,255,255,0.04);
+    background:rgba(255,255,255,0.04);
     color:#7CFFB2;
-    line-height:1.6;
+    line-height:1.7;
+    overflow-wrap:break-word;
+    word-break:break-word;
+    font-size:15px;
 }
+
+/* ===== МОБИЛЬНАЯ АДАПТАЦИЯ ===== */
+
+@media (max-width:700px){
+
+    .container{
+        padding:14px 12px 30px;
+    }
+
+    .card{
+        padding:16px;
+        border-radius:16px;
+    }
+
+    .grid{
+        grid-template-columns:1fr;
+        gap:10px;
+    }
+
+    .toggle{
+        padding:12px;
+    }
+
+    input,
+    select{
+        padding:13px;
+    }
+
+    button{
+        padding:15px;
+    }
+
+    body::before,
+    body::after{
+        width:320px;
+        height:320px;
+        filter:blur(90px);
+    }
+}
+
+/* ===== ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ ===== */
+
+@media (max-width:420px){
+
+    h1{
+        font-size:24px;
+    }
+
+    .card{
+        padding:14px;
+    }
+
+    .toggle span{
+        font-size:14px;
+    }
+
+    label{
+        font-size:12px;
+    }
+
+    input,
+    select{
+        font-size:16px;
+        padding:12px;
+    }
+
+    .result{
+        font-size:14px;
+    }
+}
+
 </style>
 </head>
 
@@ -158,23 +348,26 @@ button{
 
 <div class="container">
 
+<!-- ОСНОВНАЯ КАРТОЧКА -->
+<div class="card">
+
 <h1>Калькулятор порошковой покраски</h1>
 
-<!-- ================= MAIN ================= -->
-<div class="group" style="grid-column:1 / -1;">
+<div class="group">
 
 <label>Площадь (м²)</label>
-<input id="area_est">
+<input id="area_est" inputmode="decimal">
 
 <label>Расход краски (г/м²)</label>
-<input id="paint_norm" value="150">
+<input id="paint_norm" value="150" inputmode="decimal">
 
 <label>Цена краски (₽/кг)</label>
-<input id="paint_price_est" value="400">
+<input id="paint_price_est" value="400" inputmode="decimal">
 
-<!-- PESCO -->
+<!-- ПЕСКОСТРУЙ -->
 <div class="toggle">
 <span>Пескоструй</span>
+
 <label class="switch">
 <input type="checkbox" onchange="toggle('sand_block')">
 <span class="slider"></span>
@@ -182,8 +375,11 @@ button{
 </div>
 
 <div class="block" id="sand_block">
+
+<div class="group">
+
 <label>Цена пескоструя</label>
-<input id="sand_price" value="500">
+<input id="sand_price" value="500" inputmode="decimal">
 
 <label>Сложность</label>
 <select id="sand_coef_est">
@@ -192,11 +388,14 @@ button{
 <option value="1.5">Сложная (+50%)</option>
 <option value="2">Очень сложная (+100%)</option>
 </select>
+
+</div>
 </div>
 
-<!-- GRIND -->
+<!-- ЗАЧИСТКА -->
 <div class="toggle">
 <span>Зачистка</span>
+
 <label class="switch">
 <input type="checkbox" onchange="toggle('grind_block')">
 <span class="slider"></span>
@@ -204,8 +403,11 @@ button{
 </div>
 
 <div class="block" id="grind_block">
+
+<div class="group">
+
 <label>Цена зачистки</label>
-<input id="grind_price" value="250">
+<input id="grind_price" value="250" inputmode="decimal">
 
 <label>Сложность</label>
 <select id="grind_coef_est">
@@ -214,11 +416,14 @@ button{
 <option value="1.5">Сложная (+50%)</option>
 <option value="2">Очень сложная (+100%)</option>
 </select>
+
+</div>
 </div>
 
-<!-- CLEAN -->
+<!-- ОБЕЗЖИРИВАНИЕ -->
 <div class="toggle">
 <span>Обезжиривание</span>
+
 <label class="switch">
 <input type="checkbox" onchange="toggle('clean_block')">
 <span class="slider"></span>
@@ -226,8 +431,11 @@ button{
 </div>
 
 <div class="block" id="clean_block">
+
+<div class="group">
+
 <label>Цена обезжиривания</label>
-<input id="clean_price" value="150">
+<input id="clean_price" value="150" inputmode="decimal">
 
 <label>Сложность</label>
 <select id="clean_coef_est">
@@ -236,23 +444,26 @@ button{
 <option value="1.5">Сложная (+50%)</option>
 <option value="2">Очень сложная (+100%)</option>
 </select>
+
+</div>
 </div>
 
-<!-- FINANCE -->
+<!-- ФИНАНСЫ -->
 <div class="grid">
 
 <div class="group">
 <label>Газ (₽)</label>
-<input id="gas_norm" value="400">
+<input id="gas_norm" value="400" inputmode="decimal">
 </div>
 
 <div class="group">
 <label>Электричество (₽)</label>
-<input id="electric_norm" value="200">
+<input id="electric_norm" value="200" inputmode="decimal">
 </div>
 
 <div class="group">
 <label>Маржа</label>
+
 <select id="margin">
 <option value="1">x1</option>
 <option value="1.5">x1.5</option>
@@ -266,16 +477,21 @@ button{
 <option value="6">x6</option>
 <option value="7">x7</option>
 </select>
-</div>
 
 </div>
 
+</div>
+
+<!-- НАЛОГ -->
 <div class="toggle">
+
 <span>Налог 13%</span>
+
 <label class="switch">
 <input type="checkbox" id="tax">
 <span class="slider"></span>
 </label>
+
 </div>
 
 <button onclick="calc()">Рассчитать</button>
@@ -283,20 +499,25 @@ button{
 <div class="result" id="result"></div>
 
 </div>
+</div>
 
-<!-- ================= PAINT SYSTEM ================= -->
+<!-- ОТДЕЛЬНАЯ СИСТЕМА РАСХОДА -->
 <div class="card">
 
 <h2 style="color:#7CFFB2;">Расход краски (отдельно)</h2>
 
+<div class="group">
+
 <label>Площадь (м²)</label>
-<input id="paint_area_only">
+<input id="paint_area_only" inputmode="decimal">
 
 <label>Засыпано (кг)</label>
-<input id="paint_in_only">
+<input id="paint_in_only" inputmode="decimal">
 
 <label>Остаток (кг)</label>
-<input id="paint_out_only">
+<input id="paint_out_only" inputmode="decimal">
+
+</div>
 
 <button onclick="calcPaint()">Рассчитать расход</button>
 
@@ -313,60 +534,116 @@ function toggle(id){
 }
 
 function num(id){
-    return parseFloat((document.getElementById(id).value||"0").replace(",","."));
+    return parseFloat(
+        (document.getElementById(id).value || "0")
+        .replace(",",".")
+    );
 }
 
 /* MAIN CALC */
+
 function calc(){
 
     let area = num("area_est");
 
-    let paint = area * (num("paint_norm")/1000) * num("paint_price_est");
+    let paint =
+        area *
+        (num("paint_norm") / 1000) *
+        num("paint_price_est");
 
     let prep =
-        (document.getElementById("sand_block").classList.contains("show") ? num("sand_price") * num("sand_coef_est") : 0) +
-        (document.getElementById("grind_block").classList.contains("show") ? num("grind_price") * num("grind_coef_est") : 0) +
-        (document.getElementById("clean_block").classList.contains("show") ? num("clean_price") * num("clean_coef_est") : 0);
+
+        (document.getElementById("sand_block").classList.contains("show")
+            ? num("sand_price") * num("sand_coef_est")
+            : 0)
+
+        +
+
+        (document.getElementById("grind_block").classList.contains("show")
+            ? num("grind_price") * num("grind_coef_est")
+            : 0)
+
+        +
+
+        (document.getElementById("clean_block").classList.contains("show")
+            ? num("clean_price") * num("clean_coef_est")
+            : 0);
 
     let base = paint + prep;
 
     let gas = num("gas_norm");
+
     let electric = num("electric_norm");
 
     let cost = base + gas + electric;
 
     let margin = cost * num("margin");
 
-    let tax = document.getElementById("tax").checked ? margin * 0.13 : 0;
+    let tax =
+        document.getElementById("tax").checked
+        ? margin * 0.13
+        : 0;
 
     let total = margin + tax;
 
     document.getElementById("result").innerHTML =
-        "Себестоимость: " + Math.round(cost) + " ₽<br>" +
-        "Маржа: " + Math.round(margin) + " ₽<br>" +
-        "Налог: " + Math.round(tax) + " ₽<br><br>" +
-        "ИТОГ: " + Math.round(total) + " ₽";
+
+        "Себестоимость: " +
+        Math.round(cost) +
+        " ₽<br>"
+
+        +
+
+        "Маржа: " +
+        Math.round(margin) +
+        " ₽<br>"
+
+        +
+
+        "Налог: " +
+        Math.round(tax) +
+        " ₽<br><br>"
+
+        +
+
+        "ИТОГ: " +
+        Math.round(total) +
+        " ₽";
 }
 
 /* PAINT SYSTEM */
+
 function calcPaint(){
 
     let area = num("paint_area_only");
+
     let inKg = num("paint_in_only");
+
     let outKg = num("paint_out_only");
 
     let used = Math.max(inKg - outKg, 0);
 
     if(area <= 0){
-        document.getElementById("result_paint").innerHTML = "Укажи площадь";
+
+        document.getElementById("result_paint").innerHTML =
+            "Укажи площадь";
+
         return;
     }
 
     let gPerM2 = (used * 1000) / area;
 
     document.getElementById("result_paint").innerHTML =
-        "Израсходовано: " + used.toFixed(2) + " кг<br>" +
-        "Расход: " + gPerM2.toFixed(1) + " г/м²";
+
+        "Израсходовано: " +
+        used.toFixed(2) +
+        " кг<br>"
+
+        +
+
+        "Расход: " +
+        gPerM2.toFixed(1) +
+        " г/м²";
 }
 
 </script>
