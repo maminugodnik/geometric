@@ -331,6 +331,13 @@ button:active{
     color:#7CFFB2;
 }
 
+.compact-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:10px;
+}
+
 @keyframes cardIntro{
     from{
         opacity:0;
@@ -400,6 +407,10 @@ button:active{
     .grid{
         grid-template-columns:1fr;
         gap:10px;
+    }
+
+    .compact-actions{
+        grid-template-columns:1fr;
     }
 
     .toggle{
@@ -487,6 +498,28 @@ button:active{
 
 <label>Цена краски (₽/кг)</label>
 <input id="paint_price_est" value="400" inputmode="decimal">
+
+<label>Готовые цены краски</label>
+<select id="paint_preset" onchange="applyPaintPreset()"></select>
+
+<div class="grid">
+<div class="group">
+<label>Название краски</label>
+<input id="paint_preset_name">
+</div>
+
+<div class="group">
+<label>Цена (₽/кг)</label>
+<input id="paint_preset_price" inputmode="decimal">
+</div>
+</div>
+
+<div class="compact-actions">
+<button class="button-muted" onclick="newPaintPreset()" style="margin-top:0;">Новая краска</button>
+<button class="button-muted" onclick="savePaintPreset()" style="margin-top:0;">Сохранить цену</button>
+</div>
+
+<button class="button-danger" onclick="deletePaintPreset()" style="margin-top:10px;">Удалить выбранную цену</button>
 
 <div class="toggle">
 <span>Пескоструй</span>
@@ -747,7 +780,7 @@ button:active{
 
 <script>
 const ACCESS_KEYS = [
-    { key:"GRINCH", expires:"2030-12-31 23:59" },
+    { key:"POKRASKA-2026", expires:"2026-12-31 23:59" },
     { key:"MASTER-2026", expires:"2027-12-31 23:59" },
     { key:"SAMARA-2026", expires:"2026-08-31 18:00" }
 ];
@@ -833,6 +866,104 @@ function num(id){
 
 function isOn(id){
     return document.getElementById(id).classList.contains("show");
+}
+
+let paintPresets = [];
+
+const DEFAULT_PAINT_PRESETS = [
+    { name:"Стандарт", price:400 },
+    { name:"Эконом", price:350 },
+    { name:"Премиум", price:550 },
+    { name:"Спеццвет", price:700 }
+];
+
+try{
+    paintPresets = JSON.parse(localStorage.getItem("powder_calc_paint_presets") || "null") || DEFAULT_PAINT_PRESETS;
+}catch(e){
+    paintPresets = DEFAULT_PAINT_PRESETS;
+}
+
+if(!Array.isArray(paintPresets) || paintPresets.length === 0){
+    paintPresets = DEFAULT_PAINT_PRESETS;
+}
+
+function savePaintPresets(){
+    localStorage.setItem("powder_calc_paint_presets", JSON.stringify(paintPresets));
+}
+
+function renderPaintPresets(){
+    let select = document.getElementById("paint_preset");
+
+    if(!select){
+        return;
+    }
+
+    select.innerHTML = '<option value="">Выбери краску</option>';
+
+    paintPresets.forEach((preset, index) => {
+        let option = document.createElement("option");
+        option.value = index;
+        option.textContent = preset.name + " — " + preset.price + " ₽/кг";
+        select.appendChild(option);
+    });
+}
+
+function applyPaintPreset(){
+    let select = document.getElementById("paint_preset");
+    let index = Number(select.value);
+    let preset = paintPresets[index];
+
+    if(!preset){
+        return;
+    }
+
+    document.getElementById("paint_price_est").value = preset.price;
+    document.getElementById("paint_preset_name").value = preset.name;
+    document.getElementById("paint_preset_price").value = preset.price;
+}
+
+function newPaintPreset(){
+    document.getElementById("paint_preset").value = "";
+    document.getElementById("paint_preset_name").value = "";
+    document.getElementById("paint_preset_price").value = "";
+    document.getElementById("paint_preset_name").focus();
+}
+
+function savePaintPreset(){
+    let select = document.getElementById("paint_preset");
+    let name = document.getElementById("paint_preset_name").value.trim();
+    let price = num("paint_preset_price");
+    let index = Number(select.value);
+
+    if(!name || price <= 0){
+        return;
+    }
+
+    if(paintPresets[index]){
+        paintPresets[index] = { name:name, price:price };
+    }else{
+        paintPresets.push({ name:name, price:price });
+        index = paintPresets.length - 1;
+    }
+
+    savePaintPresets();
+    renderPaintPresets();
+    select.value = index;
+    document.getElementById("paint_price_est").value = price;
+}
+
+function deletePaintPreset(){
+    let select = document.getElementById("paint_preset");
+    let index = Number(select.value);
+
+    if(!paintPresets[index]){
+        return;
+    }
+
+    paintPresets.splice(index, 1);
+    savePaintPresets();
+    renderPaintPresets();
+    newPaintPreset();
 }
 
 function calc(){
@@ -1088,6 +1219,7 @@ function calcPaint(){
 }
 
 updateMetalTotalResult();
+renderPaintPresets();
 </script>
 </body>
 </html>
