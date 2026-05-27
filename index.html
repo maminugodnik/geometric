@@ -59,6 +59,59 @@ body::after{
     padding:24px 16px 40px;
 }
 
+body.locked .container{
+    display:none;
+}
+
+body.unlocked .lock-screen{
+    display:none;
+}
+
+.lock-screen{
+    min-height:100vh;
+    width:100%;
+    display:grid;
+    place-items:center;
+    padding:24px 16px;
+    position:relative;
+    z-index:2;
+}
+
+.lock-card{
+    width:100%;
+    max-width:440px;
+    padding:28px;
+    border-radius:18px;
+    background:rgba(255,255,255,0.07);
+    border:1px solid rgba(255,255,255,0.1);
+    box-shadow:0 24px 80px rgba(0,0,0,.32);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    animation:cardIntro .75s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.lock-title{
+    margin:0 0 8px;
+    color:#7CFFB2;
+    font-size:clamp(24px,6vw,34px);
+    line-height:1.15;
+}
+
+.lock-text{
+    margin:0 0 18px;
+    color:#b7c7d9;
+    line-height:1.5;
+    font-size:14px;
+}
+
+.lock-error{
+    min-height:22px;
+    margin-top:12px;
+    color:#ff8f8f;
+    font-size:14px;
+    line-height:1.4;
+}
+
 h1{
     text-align:center;
     color:#7CFFB2;
@@ -258,6 +311,26 @@ button:active{
     font-size:15px;
 }
 
+.button-muted{
+    background:rgba(255,255,255,0.08);
+    color:#e6f1ff;
+    border:1px solid rgba(255,255,255,0.1);
+}
+
+.button-danger{
+    background:rgba(255,105,105,0.14);
+    color:#ffb3b3;
+    border:1px solid rgba(255,105,105,0.18);
+}
+
+.area-list{
+    color:#dcecff;
+}
+
+.area-list strong{
+    color:#7CFFB2;
+}
+
 @keyframes cardIntro{
     from{
         opacity:0;
@@ -359,6 +432,11 @@ button:active{
         padding:14px;
     }
 
+    .lock-card{
+        padding:22px;
+        border-radius:16px;
+    }
+
     .toggle span{
         font-size:14px;
     }
@@ -380,7 +458,22 @@ button:active{
 </style>
 </head>
 
-<body>
+<body class="locked">
+<div class="lock-screen" id="lock_screen">
+<form class="lock-card" onsubmit="return checkAccessKey()">
+<h1 class="lock-title">Доступ по ключу</h1>
+<p class="lock-text">Введите ключ, чтобы открыть калькулятор порошковой покраски.</p>
+
+<div class="group">
+<label>Ключ доступа</label>
+<input id="access_key" autocomplete="off">
+</div>
+
+<button type="submit">Открыть калькулятор</button>
+<div class="lock-error" id="lock_error"></div>
+</form>
+</div>
+
 <div class="container">
 <div class="card">
 <h1>Калькулятор порошковой покраски</h1>
@@ -629,6 +722,10 @@ button:active{
 <button onclick="calcMetalArea()">Рассчитать площадь</button>
 <button onclick="insertArea()" style="margin-top:10px;">Перенести площадь в калькулятор</button>
 <div class="result" id="metal_result"></div>
+<div class="result area-list" id="metal_total_result"></div>
+<button onclick="insertTotalArea()" style="margin-top:10px;">Перенести общую площадь в калькулятор</button>
+<button class="button-muted" onclick="removeLastMetalItem()" style="margin-top:10px;">Удалить последнюю позицию</button>
+<button class="button-danger" onclick="clearMetalItems()" style="margin-top:10px;">Очистить общий расчет площади</button>
 </div>
 
 <div class="card">
@@ -649,6 +746,80 @@ button:active{
 </div>
 
 <script>
+const ACCESS_KEYS = [
+    { key:"GRINCH", expires:"2030-12-31 23:59" },
+    { key:"MASTER-2026", expires:"2027-12-31 23:59" },
+    { key:"SAMARA-2026", expires:"2026-08-31 18:00" }
+];
+
+function openCalculator(){
+    document.body.classList.remove("locked");
+    document.body.classList.add("unlocked");
+}
+
+function getKeyInfo(key){
+    return ACCESS_KEYS.find(item => item.key === key);
+}
+
+function getExpireDate(keyInfo){
+    let expires = keyInfo.expires.trim();
+
+    if(/^\d{4}-\d{2}-\d{2}$/.test(expires)){
+        return new Date(expires + "T23:59:59");
+    }
+
+    return new Date(expires.replace(" ", "T"));
+}
+
+function isKeyActive(keyInfo){
+    if(!keyInfo){
+        return false;
+    }
+
+    return new Date() <= getExpireDate(keyInfo);
+}
+
+function saveAccess(keyInfo){
+    localStorage.setItem("powder_calc_key", keyInfo.key);
+    localStorage.setItem("powder_calc_access_until", keyInfo.expires);
+}
+
+function clearAccess(){
+    localStorage.removeItem("powder_calc_access");
+    localStorage.removeItem("powder_calc_key");
+    localStorage.removeItem("powder_calc_access_until");
+}
+
+function checkAccessKey(){
+    let key = document.getElementById("access_key").value.trim().toUpperCase();
+    let error = document.getElementById("lock_error");
+    let keyInfo = getKeyInfo(key);
+
+    if(isKeyActive(keyInfo)){
+        saveAccess(keyInfo);
+        openCalculator();
+        return false;
+    }
+
+    if(keyInfo){
+        error.innerHTML = "Срок действия ключа истек";
+    }else{
+        error.innerHTML = "Неверный ключ доступа";
+    }
+
+    return false;
+}
+
+let savedKey = localStorage.getItem("powder_calc_key");
+let savedKeyInfo = getKeyInfo(savedKey);
+
+if(isKeyActive(savedKeyInfo)){
+    openCalculator();
+}else{
+    clearAccess();
+    document.getElementById("access_key").focus();
+}
+
 function toggle(id){
     document.getElementById(id).classList.toggle("show");
 }
@@ -729,6 +900,88 @@ function calc(){
 }
 
 let lastMetalArea = 0;
+let metalItems = [];
+
+try{
+    metalItems = JSON.parse(localStorage.getItem("powder_calc_metal_items") || "[]");
+}catch(e){
+    metalItems = [];
+}
+
+if(!Array.isArray(metalItems)){
+    metalItems = [];
+}
+
+const METAL_TYPE_NAMES = {
+    round:"Круглая труба",
+    profile:"Профильная труба",
+    angle:"Уголок",
+    channel:"Швеллер",
+    ibeam:"Двутавр"
+};
+
+function saveMetalItems(){
+    localStorage.setItem("powder_calc_metal_items", JSON.stringify(metalItems));
+}
+
+function getMetalTotal(){
+    return metalItems.reduce((sum, item) => sum + item.area, 0);
+}
+
+function updateMetalTotalResult(){
+    let result = document.getElementById("metal_total_result");
+
+    if(!result){
+        return;
+    }
+
+    if(metalItems.length === 0){
+        result.innerHTML = "Общий расчет пуст";
+        return;
+    }
+
+    let rows = metalItems
+        .map((item, index) =>
+            (index + 1) + ". " +
+            item.name + ": " +
+            item.area.toFixed(2) +
+            " м²"
+        )
+        .join("<br>");
+
+    result.innerHTML =
+        rows +
+        "<br><br><strong>Общая площадь: " +
+        getMetalTotal().toFixed(2) +
+        " м²</strong>";
+}
+
+function addMetalItem(type, area){
+    metalItems.push({
+        name:METAL_TYPE_NAMES[type] || "Изделие",
+        area:area
+    });
+
+    saveMetalItems();
+    updateMetalTotalResult();
+}
+
+function insertTotalArea(){
+    document.getElementById("area_est").value =
+        getMetalTotal().toFixed(2);
+}
+
+function removeLastMetalItem(){
+    metalItems.pop();
+    saveMetalItems();
+    updateMetalTotalResult();
+}
+
+function clearMetalItems(){
+    metalItems = [];
+    saveMetalItems();
+    updateMetalTotalResult();
+}
 
 function changeMetalType(){
     document.getElementById("round_block").style.display = "none";
@@ -784,12 +1037,20 @@ function calcMetalArea(){
         area = ((4 * a) + (2 * b)) * l * count;
     }
 
+    if(area <= 0){
+        lastMetalArea = 0;
+        document.getElementById("metal_result").innerHTML =
+            "Укажи размеры изделия";
+        return;
+    }
+
     lastMetalArea = area;
+    addMetalItem(type, area);
 
     document.getElementById("metal_result").innerHTML =
         "Площадь поверхности: " +
         area.toFixed(2) +
-        " м²";
+        " м²<br>Позиция добавлена в общий расчет";
 }
 
 function insertArea(){
@@ -825,6 +1086,8 @@ function calcPaint(){
         gPerM2.toFixed(1) +
         " г/м²";
 }
+
+updateMetalTotalResult();
 </script>
 </body>
 </html>
